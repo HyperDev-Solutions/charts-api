@@ -5,6 +5,7 @@ import jwt
 import os
 from werkzeug.security import generate_password_hash, check_password_hash
 from dotenv import load_dotenv
+from flask_cors import CORS
 load_dotenv()
 
 
@@ -12,6 +13,7 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+CORS(app, supports_credentials=True, methods=['GET', 'POST', 'PUT', 'DELETE'])
 
 db = SQLAlchemy(app)
 
@@ -34,10 +36,32 @@ class User(db.Model):
     def __repr__(self):
         return '<User {}>'.format(self.email)
 
+class UserContact(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    first_name = db.Column(db.String(50), nullable=False)
+    last_name = db.Column(db.String(50), nullable=False)
+    email = db.Column(db.String(50), nullable=False)
+    message = db.Column(db.String(255), nullable=False)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'first_name': self.first_name,
+            'last_name': self.last_name,
+            'email': self.email,
+            'message': self.message
+        }
+
+
 with app.app_context():
     db.create_all()
+    
+@app.route('/')
+def index():
+    return jsonify({'message': 'Hello, World!'})
 
-@app.route('/users', methods=['POST'])
+
+@app.route('/register', methods=['POST'])
 def create_user():
     data = request.get_json()
     if not data or 'email' not in data or 'password' not in data:
@@ -54,17 +78,14 @@ def create_user():
     db.session.add(user)
     db.session.commit()
 
-    return jsonify(user.to_dict(), {"message": "user created"}), 201
+    response = {
+        'user': user.to_dict(),
+        'message': 'user created'
+    }
 
-@app.route('/users/count', methods=['GET'])
-def get_user_count():
-    user_count = User.query.count()
-    return jsonify({'count': user_count})
+    return jsonify(response), 201
 
-@app.route('/users', methods=['GET'])
-def get_all_users():
-    users = User.query.all()
-    return jsonify([user.to_dict() for user in users])
+
 
 @app.route('/login', methods=['POST'])
 def login():
@@ -79,10 +100,35 @@ def login():
     if not user or not user.check_password(password):
         return jsonify({'message': 'Invalid credentials'}), 401
 
-    token_payload = {'sub': user.id, 'exp': datetime.utcnow() + timedelta(minutes=30)}
+    token_payload = {'sub': user.id, 'email': user.email , 'exp': datetime.utcnow() + timedelta(minutes=30)}
     token = jwt.encode(token_payload, app.config['SECRET_KEY'], algorithm='HS256')
+    
+    response = jsonify({'token': token, 'message': 'Login successful'})
+    return response
 
-    return jsonify({'token': token, "message": "login successful"})
+@app.route('/user-contacts', methods=['POST'])
+def create_user_contact():
+    data = request.get_json()
+    if not data or 'first_name' not in data or 'last_name' not in data or 'email' not in data or 'message' not in data:
+        return jsonify({'error': 'first name, last name, email, and message are required'}), 400
+
+    first_name = data['first_name']
+    last_name = data['last_name']
+    email = data['email']
+    message = data['message']
+
+    user_contact = UserContact(first_name=first_name, last_name=last_name, email=email, message=message)
+    db.session.add(user_contact)
+    db.session.commit()
+
+    # return jsonify(user_contact.to_dict(), {"message": "Your message is received"}), 201
+    response = {
+        'user': user_contact.to_dict(),
+        'message': 'Your message is received'
+    }
+    return jsonify(response), 201
+
+
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0')

@@ -6,6 +6,7 @@ import os
 from werkzeug.security import generate_password_hash, check_password_hash
 from dotenv import load_dotenv
 from flask_cors import CORS
+import pandas as pd
 load_dotenv()
 
 
@@ -84,6 +85,20 @@ def create_user():
     }
 
     return jsonify(response), 201
+
+@app.route('/process-excel' , methods=['GET'])
+def process_excel():
+    file_path = './ticker_list.xlsx'  # Specify the file path
+    print("file_path", file_path)
+    if not os.path.exists(file_path):
+        return jsonify({'error': 'File not found'}), 404
+    
+    try:
+        df = pd.read_excel(file_path)
+        data = df.to_dict(orient='records')
+        return jsonify(data)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 
 

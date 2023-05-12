@@ -88,7 +88,7 @@ def create_user():
 
 @app.route('/process-excel' , methods=['GET'])
 def process_excel():
-    file_path = './ticker_list.xlsx'  # Specify the file path
+    file_path = './ticker_list.xlsx'
     print("file_path", file_path)
     if not os.path.exists(file_path):
         return jsonify({'error': 'File not found'}), 404

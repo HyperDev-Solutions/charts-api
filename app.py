@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 import jwt
-from flask_jwt_extended import JWTManager, create_access_token
+# from flask_jwt_extended import JWTManager, create_access_token
 import os
 from werkzeug.security import generate_password_hash, check_password_hash
 from dotenv import load_dotenv
@@ -18,7 +18,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 CORS(app, supports_credentials=True, methods=['GET', 'POST', 'PUT', 'DELETE'])
 
 db = SQLAlchemy(app)
-jwt = JWTManager(app)
+# jwt = JWTManager(app)
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -116,8 +116,13 @@ def login():
     user = User.query.filter_by(email=email).first()
     if not user or not user.check_password(password):
         return jsonify({'message': 'Invalid credentials'}), 401
-
-    access_token = create_access_token(identity=user.id, expires_delta=timedelta(hours=12))
+    print(user.id)
+    # access_token = create_access_token(identity=user.id, expires_delta=timedelta(hours=12))
+    access_token = jwt.encode(
+                    {"user_id": user.id},
+                    app.config["SECRET_KEY"],
+                    algorithm="HS256"
+                )
 
     return jsonify({'access_token': access_token, 'message': 'Login successful'})
 

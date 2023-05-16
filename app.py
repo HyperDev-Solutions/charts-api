@@ -18,10 +18,10 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 CORS(app, supports_credentials=True, methods=['GET', 'POST', 'PUT', 'DELETE'])
 
 db = SQLAlchemy(app)
-# jwt = JWTManager(app)
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(50) , nullable=False)
     email = db.Column(db.String(50), unique=True, nullable=False)
     password_hash = db.Column(db.String(128), nullable=False)
 
@@ -41,19 +41,30 @@ class User(db.Model):
 
 class UserContact(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    first_name = db.Column(db.String(50), nullable=False)
-    last_name = db.Column(db.String(50), nullable=False)
+    username = db.Column(db.String(50), nullable=False)
     email = db.Column(db.String(50), nullable=False)
     message = db.Column(db.String(255), nullable=False)
 
     def to_dict(self):
         return {
             'id': self.id,
-            'first_name': self.first_name,
-            'last_name': self.last_name,
+            'username': self.username,
             'email': self.email,
             'message': self.message
         }
+        
+class WaitingList(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(50), nullable=False)
+    fullname = db.Column(db.String(50), nullable=False)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'email': self.email,
+            'fullname': self.fullname
+        }
+
 
 
 with app.app_context():
@@ -67,16 +78,18 @@ def index():
 @app.route('/register', methods=['POST'])
 def create_user():
     data = request.get_json()
-    if not data or 'email' not in data or 'password' not in data:
-        return jsonify({'error': 'email and password are required'}), 400
+    if not data or 'email' not in data or 'password' not in data or 'username' not in data:
+        return jsonify({'error': 'email, username, and password are required'}), 400
 
+    username = data['username']
     email = data['email']
     password = data['password']
 
     if User.query.filter_by(email=email).first():
         return jsonify({'error': 'email already exists'}), 400
+   
 
-    user = User(email=email)
+    user = User(email=email, username=username)
     user.set_password(password)
     db.session.add(user)
     db.session.commit()
@@ -87,6 +100,7 @@ def create_user():
     }
 
     return jsonify(response), 201
+
 
 @app.route('/process-excel' , methods=['GET'])
 def process_excel():
@@ -119,7 +133,7 @@ def login():
     print(user.id)
     # access_token = create_access_token(identity=user.id, expires_delta=timedelta(hours=12))
     access_token = jwt.encode(
-                    {"user_id": user.id},
+                    {"user_id": user.id, "email": user.email, "exp": datetime.utcnow() + timedelta(hours=12)},
                     app.config["SECRET_KEY"],
                     algorithm="HS256"
                 )
@@ -130,15 +144,14 @@ def login():
 @app.route('/user-contacts', methods=['POST'])
 def create_user_contact():
     data = request.get_json()
-    if not data or 'first_name' not in data or 'last_name' not in data or 'email' not in data or 'message' not in data:
-        return jsonify({'error': 'first name, last name, email, and message are required'}), 400
+    if not data or 'username' not in data or 'email' not in data or 'message' not in data:
+        return jsonify({'error': 'username, email, and message are required'}), 400
 
-    first_name = data['first_name']
-    last_name = data['last_name']
+    username = data['username']
     email = data['email']
     message = data['message']
 
-    user_contact = UserContact(first_name=first_name, last_name=last_name, email=email, message=message)
+    user_contact = UserContact(username=username, email=email, message=message)
     db.session.add(user_contact)
     db.session.commit()
 
@@ -147,6 +160,26 @@ def create_user_contact():
         'user': user_contact.to_dict(),
         'message': 'Your message is received'
     }
+    return jsonify(response), 201
+
+@app.route('/waiting-list', methods=['POST'])
+def add_to_waiting_list():
+    data = request.get_json()
+    if not data or 'email' not in data or 'fullname' not in data:
+        return jsonify({'error': 'email and fullname are required'}), 400
+
+    email = data['email']
+    fullname = data['fullname']
+
+    waiting_entry = WaitingList(email=email, fullname=fullname)
+    db.session.add(waiting_entry)
+    db.session.commit()
+
+    response = {
+        'data': waiting_entry.to_dict(),
+        'message': 'Joined to the waiting list'
+    }
+
     return jsonify(response), 201
 
 

@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 import jwt
 # from flask_jwt_extended import JWTManager, create_access_token
@@ -182,6 +182,10 @@ def add_to_waiting_list():
 
     return jsonify(response), 201
 
+@app.route('/static/<path:filename>')
+def serve_static(filename):
+    root_dir = os.path.dirname(os.path.abspath(__file__))
+    return send_from_directory(os.path.join(root_dir, 'static'), filename)
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0')

@@ -17,7 +17,7 @@ from pytictoc import TicToc
 import numpy as np
 import matplotlib.pyplot as plt
 import stumpy
-
+import json
 load_dotenv()
 
 
@@ -293,13 +293,17 @@ def get_graph(ticker):
             matches_df["add"] = add
             #print(matches_df)
             print("matches_df",matches_df,"master_data_z_norm",master_data_z_norm,"compared_data_z_norm",compared_data_z_norm)
+            matches_df_filled = matches_df.fillna(value=0)
+            compared_data_filled = compared_data.fillna(value=0)
             data = {
-                "matches_df":matches_df.to_dict(orient='records'),
+                "matches_df":matches_df_filled.to_dict(orient='records'),
                 "master_data_z_norm":master_data_z_norm.tolist(),
                 "compared_data_z_norm":compared_data_z_norm.tolist(),
-                "compared_data":compared_data.to_dict(orient='records')
+                "compared_data":compared_data_filled.to_dict(orient='records')
             }
-            return jsonify(data)
+            json_data = json.dumps(data)
+
+            return jsonify(json_data)
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0')

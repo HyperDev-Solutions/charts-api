@@ -300,7 +300,7 @@ def get_graph(ticker):
             label2=(ticker)+":  "+str(compared_data.iloc[idx].name.strftime('%m/%d/%Y'))+"-" +str(compared_data.iloc[idx+len(master_data)+add].name.strftime('%m/%d/%Y'))
             data = {
                 "compared_data_z_norm":compared_data_z_norm.tolist(),
-                "compared_data":compared_data_filled.to_dict(orient='records'),
+                "master_data_z_norm":master_data_z_norm.tolist(),
                 "label1":label1,
                 "label2":label2
                 

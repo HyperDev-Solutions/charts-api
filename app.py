@@ -296,11 +296,15 @@ def get_graph(ticker):
             print("matches_df",matches_df,"master_data_z_norm",master_data_z_norm,"compared_data_z_norm",compared_data_z_norm)
             matches_df_filled = matches_df.fillna(value=0)
             compared_data_filled = compared_data.fillna(value=0)
+            label1=(Analyzed_ticker)+":  "+sel_start.strftime("%Y-%m-%d")+" - Today"
+            label2=(ticker)+":  "+str(compared_data.iloc[idx].name.strftime('%m/%d/%Y'))+"-" +str(compared_data.iloc[idx+len(master_data)+add].name.strftime('%m/%d/%Y'))
             data = {
-                "matches_df":matches_df_filled.to_dict(orient='records'),
-                "master_data_z_norm":master_data_z_norm.tolist(),
                 "compared_data_z_norm":compared_data_z_norm.tolist(),
-                "compared_data":compared_data_filled.to_dict(orient='records')
+                "compared_data":compared_data_filled.to_dict(orient='records'),
+                "label1":label1,
+                "label2":label2
+                
+                
             }
             json_data = json.dumps(data)
 

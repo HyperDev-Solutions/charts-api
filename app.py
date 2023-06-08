@@ -199,6 +199,7 @@ def serve_static(filename):
 
 @app.route('/graph/<path:ticker>')
 def get_graph(ticker):
+    Analyzed_ticker = ticker
     t=TicToc()
     #Defining Start and End Date
     end_date = date.today().strftime('%m/%d/%Y') #'01/01/2023'
@@ -218,7 +219,7 @@ def get_graph(ticker):
     for ticker in ticker_list:
         for add in add_list:
             #mestre
-            master_ticker = si.get_data(ticker, start_date = start_date , end_date = end_date)["close"].to_frame().round(1)
+            master_ticker = si.get_data(Analyzed_ticker, start_date = start_date , end_date = end_date)["close"].to_frame().round(1)
             master_ticker.head()
             master_ticker["1DMA"] = master_ticker["close"].rolling(1).mean().round(1)
             master_ticker["5DMA"] = master_ticker["close"].rolling(5).mean().round(1)
